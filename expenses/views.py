@@ -1,7 +1,6 @@
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.db.models import Sum
 
 from .models import Category, Expense
 from .serializers import CategorySerializer, ExpenseSerializer
@@ -38,7 +37,7 @@ def expense_list(request):
     serializer = ExpenseSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     serializer.save()
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serialzer.data, status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET", "PUT", "DELETE"])
