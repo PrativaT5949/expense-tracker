@@ -6,9 +6,11 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.conf import settings
 
 from .models import Category, Expense
 from .serializers import CategorySerializer, ExpenseSerializer, RegisterSerializer
+from .currency import convert
 
 
 # ── Auth endpoints ──
@@ -101,15 +103,29 @@ def expense_detail(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# ── Summary ──
+# ── Summary (with currency conversion) ──
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def expense_summary(request):
-    summary = (
-        Expense.objects.filter(user=request.user)
-        .values("category__name")
-        .annotate(total=Sum("amount"))
-        .order_by("category__name")
-    )
-    return Response(list(summary))
+    base_currency = settings.BASE_CURRENCY
+    expenses = Expense.objects.filter(user=request.user).select_related("category")
+
+    category_totals = {}
+
+    for expense in expenses:
+        cat_name = expense.category.name
+        converted_amount, rate, as_of = convert(
+            float(expense.amount), expense.currency, base_currency
+        )
+
+        if cat_name not in category_totals:
+            category_totals[cat_name] = {"total": 0.0, "as_of": as_of}
+        category_totals[cat_name]["total"] += converted_amount
+
+    result = [
+        {"category": name, "total": round(data["total"], 2), "as_of": data["as_of"]}
+        for name, data in sorted(category_totals.items())
+    ]
+
+    return Response({"base_currency": base_currency, "categories": result})

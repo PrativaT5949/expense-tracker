@@ -25,12 +25,15 @@ class ExpenseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Expense
-        fields = ["id", "title", "amount", "category", "category_name", "date", "notes"]
+        fields = ["id", "title", "amount","currency","category", "category_name", "date", "notes"]
 
     def validate_amount(self, value):
         if value <= 0:
             raise serializers.ValidationError("Amount must be greater than zero.")
         return value
+    
+    def validate_currency(self, value):
+        return value.upper()
 
     def validate_category(self, value):
         request = self.context.get("request")
