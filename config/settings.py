@@ -93,3 +93,5 @@ REST_FRAMEWORK = {
     ],
 }
 BASE_CURRENCY = os.getenv("BASE_CURRENCY", "USD")
+# Budget threshold bot alerts
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
