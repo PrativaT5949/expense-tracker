@@ -92,3 +92,4 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
 }
+BASE_CURRENCY = os.getenv("BASE_CURRENCY", "USD")
