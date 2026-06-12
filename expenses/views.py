@@ -1,3 +1,4 @@
+
 from django.db.models import Sum
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -11,6 +12,7 @@ from django.conf import settings
 from .models import Category, Expense
 from .serializers import CategorySerializer, ExpenseSerializer, RegisterSerializer
 from .currency import convert
+from .alerts import check_and_alert
 
 
 # ── Auth endpoints ──
@@ -77,7 +79,8 @@ def expense_list(request):
 
     serializer = ExpenseSerializer(data=request.data, context={"request": request})
     serializer.is_valid(raise_exception=True)
-    serializer.save(user=request.user)
+    expense = serializer.save(user=request.user)
+    check_and_alert(expense)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -96,7 +99,8 @@ def expense_detail(request, pk):
     if request.method == "PUT":
         serializer = ExpenseSerializer(expense, data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        expense = serializer.save()
+        check_and_alert(expense)
         return Response(serializer.data)
 
     expense.delete()
