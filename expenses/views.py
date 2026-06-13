@@ -74,6 +74,9 @@ def expense_list(request):
             expenses = expenses.filter(date__gte=start_date)
         if end_date:
             expenses = expenses.filter(date__lte=end_date)
+        search = request.query_params.get("search")
+        if search:
+            expenses = expenses.filter(title__icontains=search)
         serializer = ExpenseSerializer(expenses, many=True, context={"request": request})
         return Response(serializer.data)
 
