@@ -136,3 +136,41 @@ def expense_summary(request):
     ]
 
     return Response({"base_currency": base_currency, "categories": result})
+
+# ── feature: Monthly spending summary ──
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def monthly_summary(request):
+    """
+    GET /api/expenses/monthly-summary/?year=2026
+    Returns month-by-month spending totals for the given year (defaults to current year).
+    """
+    from datetime import date
+    year = int(request.query_params.get("year", date.today().year))
+    base_currency = settings.BASE_CURRENCY
+
+    expenses = Expense.objects.filter(
+        user=request.user, date__year=year
+    ).select_related("category")
+
+    monthly = {}
+
+    for expense in expenses:
+        month = expense.date.month
+        converted_amount, _, _ = convert(float(expense.amount), expense.currency, base_currency)
+        monthly[month] = monthly.get(month, 0.0) + converted_amount
+
+    result = []
+    for m in range(1, 13):
+        result.append({
+            "month": date(year, m, 1).strftime("%B"),
+            "month_number": m,
+            "total": round(monthly.get(m, 0.0), 2),
+        })
+
+    return Response({
+        "year": year,
+        "base_currency": base_currency,
+        "months": result,
+    })
